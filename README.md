@@ -1,15 +1,14 @@
 
 ![overlord](./assets/header-image.png)
-<!--[![build status](https://github.com/jrialland/overlord/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/jrialland/overlord/actions) -->
-<!--[![coverage](https://coveralls.io/repos/github/jrialland/overlord/badge.svg?branch=develop)](https://coveralls.io/github/jrialland/overlord?branch=develop) -->
-<!--[![security: bandit](https://img.shields.io/badge/security-bandit-yellow.svg)](https://github.com/PyCQA/bandit) -->
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://docs.astral.sh/ruff/)
-<!--[![pypi](https://badge.fury.io/py/asgiri.svg)](https://badge.fury.io/py/asgiri) -->
-<!--[![Python Versions](https://img.shields.io/pypi/pyversions/asgiri)](https://pypi.org/project/overlord/) -->
-[![Downloads](https://static.pepy.tech/badge/overlord)](https://pepy.tech/project/overlord)
 [![License](https://licensebuttons.net/l/by-nc-sa/4.0/80x15.png)](https://github.com/jrialland/overlord/blob/main/LICENSE)
 [![stars](https://img.shields.io/github/stars/jrialland/overlord)](https://github.com/jrialland/overlord)
 [![forks](https://img.shields.io/github/forks/jrialland/overlord)](https://github.com/jrialland/overlord)
+<!--[![build status](https://github.com/jrialland/overlord/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/jrialland/overlord/actions) -->
+<!--[![coverage](https://coveralls.io/repos/github/jrialland/overlord/badge.svg?branch=develop)](https://coveralls.io/github/jrialland/overlord?branch=develop) -->
+<!--[![security: bandit](https://img.shields.io/badge/security-bandit-yellow.svg)](https://github.com/PyCQA/bandit) -->
+<!--[![pypi](https://badge.fury.io/py/overlord.svg)](https://badge.fury.io/py/overlord) -->
+<!--[![Python Versions](https://img.shields.io/pypi/pyversions/overlord)](https://pypi.org/project/overlord/) -->
 
 A crude coding agent running in non-interactive CLI mode.
 
