@@ -36,7 +36,7 @@ embedding_models:
     model: nomic-embed-text-v2-moe:latest
 
 # default model to use when not specified in the prompt or skill configuration
-default_model: "glm-5-ollama"
+default_model: "qwen3-coder:30b"
 
 # summarization model : the model that will be used to summarize the conversations. defaults to main model is not specified.
 summarization_model: "kimi-k2.5-ollama"

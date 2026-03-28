@@ -309,13 +309,15 @@ class OverlordAgent(AgentMiddleware[AgentState, None, None]):  # type: ignore[ty
         self, state: AgentState, runtime: Runtime[None]
     ) -> dict[str, Any] | None:
         messages = state.get("messages", [])
-        if state.next_skill and state.next_skill != state.current_skill:
-            logger.debug(f"Activating skill: {state.next_skill}")
-            state.current_skill = state.next_skill
-            state.next_skill = None
+        current_skill = state.get("current_skill")
+        next_skill = state.get("next_skill")
+        if next_skill and next_skill != current_skill:
+            logger.debug(f"Activating skill: {next_skill}")
+            state.set("current_skill", next_skill)
+            state.set("next_skill", None)
             messages.append(
                 SystemMessage(
-                    content=self.prompt_generator.skills[state.current_skill].content  # type: ignore[union-attr] # FIX ME
+                    content=self.prompt_generator.skills[state.get("current_skill")].content  # type: ignore[union-attr] # FIX ME
                 )
             )  # type: ignore  # FIX ME # FIX ME
             return {"messages": messages}
