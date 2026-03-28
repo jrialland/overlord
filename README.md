@@ -151,8 +151,6 @@ In practice I've been using:
 
 - [Kimi k2.5](https://platform.moonshot.ai/), either directly from Moonshot (in this case, you would have to use the provided [specific implementation](./src/overlord/models/moonshot.py) of ChatModel in order to have thinking capabilities to work) – or through Ollama (['kimi-k2.5:cloud'](https://ollama.com/library/kimi-k2.5)).
 
-- Some local Ollama models (mainly [qwen3.5:35b](https://ollama.com/library/qwen3.5:35b))
-
 AFAIK the [configuration system](./workspace-template/.overlord/config.yaml) can manage several providers, but these are untested.
 
 ## How to install
