@@ -35,7 +35,7 @@ This is an experiment in using different techniques to get complex coding tasks 
 - A custom [skill system](https://agentskills.io/) (simple, but rather aligned with official specs) is implemented [here](./src/overlord/prompt/skills.py)
 - A handful of home-made [skills](./workspace-template/.overlord/skills/)
 - Trying to [RAG](https://en.wikipedia.org/wiki/Retrieval-augmented_generation) technical docs: in a workspace, if there is a folder named "documentation", its content is indexed and used as a basis for plain RAG in the system prompt (no "rag-as-tool")
-- Support for MCP tools (see [sample configuration](./workspace-template/configuration.yaml))
+- Support for MCP tools (see [sample configuration](./workspace-template/config.yaml))
 - Use of [@modelcontextprotocol filesystem tools](https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem#readme) instead of the ones provided by deepagents. There is an open issue regarding this.
 - [jcodemunch](https://github.com/jgravelle/jcodemunch-mcp) for much faster source code browsing
 - [Ralphing](https://ghuntley.com/ralph/) like there's no tomorrow
@@ -153,7 +153,7 @@ In practice I've been using:
 
 - Some local Ollama models (mainly [qwen3.5:35b](https://ollama.com/library/qwen3.5:35b))
 
-AFAIK the [configuration system](./workspace-template/.overlord/configuration.yaml) can manage several providers, but these are untested.
+AFAIK the [configuration system](./workspace-template/.overlord/config.yaml) can manage several providers, but these are untested.
 
 ## How to install
 
