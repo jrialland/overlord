@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "overlord"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "click>=8.3.1",
+    "deepagents>=0.4.12",
+    "dotenv>=0.9.9",
+    "grandalf>=0.8",
+    "jinja2>=3.1.6",
+    "langchain-community>=0.4.1",
+    "langchain-mcp-adapters>=0.2.2",
+    "langchain-ollama>=1.0.1",
+    "langchain-qdrant>=1.1.0",
+    "loguru>=0.7.3",
+    "markdown-strings>=3.4.0",
+    "markitdown[docx,pdf,pptx]>=0.1.5",
+    "robohash>=2.0",
+    "watchdog>=6.0.0",
+]
+
+[project.scripts]
+overlord-cli = "overlord.cli:run_agent"
+
+[dependency-groups]
+dev = [
+    "isort>=8.0.1",
+    "mypy>=1.19.1",
+    "mypy-upgrade>=0.0.1b6",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=7.1.0",
+    "pytest-timeout>=2.2.0",
+    "ruff>=0.15.8",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/overlord"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+timeout = 60
+asyncio_mode = "auto"

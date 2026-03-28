@@ -1,0 +1,58 @@
+
+# list of registered LLM providers.
+# defined types are: "openai", "anthropic", "ollama", "moonshot", or qualified class name like "langchain_community.chat_models.llamacpp.ChatLlamaCpp" for custom providers.
+# other keys are passed as-is to the provider implementation (i.e base_url, api_key, etc..)
+llm_providers:
+
+  moonshot:
+    type: moonshot
+
+  ollama:
+    type: ollama
+
+# list of LLM models linked to a provider. The keys are passed as-is to the provider implementation (i.e model, temperature, etc..)
+models:
+
+  "kimi-k2.5":
+    provider: moonshot
+    model: kimi-k2.5
+
+  "kimi-k2.5-ollama":
+    provider: ollama
+    model: "kimi-k2.5:cloud"
+
+  "glm-5-ollama":
+    provider: ollama
+    model: "glm-5:cloud"
+
+  "qwen3-coder:30b":
+    provider: ollama
+    model: "qwen3-coder:30b"
+
+embedding_models:
+
+  "nomic-embed-text-v2-moe":
+    provider: ollama
+    model: nomic-embed-text-v2-moe:latest
+
+# default model to use when not specified in the prompt or skill configuration
+default_model: "glm-5-ollama"
+
+# summarization model : the model that will be used to summarize the conversations. defaults to main model is not specified.
+summarization_model: "kimi-k2.5-ollama"
+
+# embedding model to use for RAG. has to reference a model from the embedding_models section. This is required for RAG to work.
+embedding_model: "nomic-embed-text-v2-moe"
+
+# list of registered MCP servers. The keys are the server name, and the values are the configuration for the server.
+# the schema stricly follows what will be passed to the constructor of [MultiServerMCPClient](https://github.com/langchain-ai/langchain-mcp-adapters?tab=readme-ov-file#client-1)
+# tools from these servers are available to all the agents
+mcp_servers:
+  "sequentialThinking":
+    transport: stdio
+    command: "npx"
+    args: ["--yes", "@modelcontextprotocol/server-sequential-thinking"]
+  "jcodemunch":
+    transport: stdio
+    command: "uvx"
+    args: ["jcodemunch-mcp"]
