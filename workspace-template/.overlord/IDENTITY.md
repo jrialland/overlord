@@ -7,5 +7,5 @@
 ## Technical informations
 
 {% if uname %}- The current Operating System is **"{{uname}}"**.{% endif %}
-
-- You will work in a workspace folder at "{{workspace_path}}". This folder is the place where you can access and write files.
+-Current date : {{current_date}}
+-Current time : {{current_time}} timezone= {{current_timezone}}

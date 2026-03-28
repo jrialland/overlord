@@ -4,11 +4,12 @@ This module generates the system prompt for the agent
 
 from __future__ import annotations
 
+from datetime import datetime
 import getpass
 import os
 import platform
 from pathlib import Path
-
+import time
 import jinja2
 from langchain.messages import SystemMessage
 from loguru import logger
@@ -48,13 +49,17 @@ class SystemPromptGenerator:
         self._initialize_variables()  # type: ignore[no-untyped-call] # FIX ME
 
     def _initialize_variables(self):  # type: ignore[no-untyped-def] # FIX ME
+
         # add current workspace path
         self._jinja_variables["workspace_path"] = self.workspace_path.absolute().as_posix()
+
         # add agent name
         self._jinja_variables["nickname"] = self.agent_nickname
+
         # add current operating system
         uname_result = platform.uname()
         self._jinja_variables["uname"] = f"{uname_result.system} {uname_result.release} ({uname_result.version})"
+
         # add current user name
         user = 'anonymous'
         try:
@@ -65,6 +70,12 @@ class SystemPromptGenerator:
         
         # add environment variables
         self._jinja_variables["env"] = os.environ  # type: ignore[assignment] # FIX ME
+
+        # date and time variables
+        now = datetime.now()
+        self._jinja_variables["current_time"] = now.strftime("%H:%M:%S")
+        self._jinja_variables["current_date"] = now.strftime("%A, %B %d, %Y")
+        self._jinja_variables["current_timezone"] = now.astimezone().tzname() + f" (UTC{now.astimezone().strftime('%z')})"
 
         # add agent avatar path
         avatar_path = self.workspace_path / ".overlord" / self.agent_nickname / "AVATAR.png"
