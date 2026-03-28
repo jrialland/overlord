@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Awaitable, Callable, override
 
 from deepagents import create_deep_agent
+from deepagents.backends import FilesystemBackend
 from langchain.agents.middleware import (ModelRetryMiddleware, Runtime,
                                          SummarizationMiddleware)
 from langchain.agents.middleware.types import AgentMiddleware, ContextT
@@ -240,7 +241,7 @@ class OverlordAgent(AgentMiddleware[AgentState, None, None]):  # type: ignore[ty
         tools: list[BaseTool] = await self.mcp_client.get_tools()  # type: ignore[attr-defined]
 
         # also add our custom tool for running commands
-        # tools.append(RunCmdTool(workspace_path=self.workspace_path))
+        #tools.append(RunCmdTool(workspace_path=self.workspace_path))
 
         # add the tool that allows activating skills
         # this special tool for activating skills.
@@ -280,29 +281,6 @@ class OverlordAgent(AgentMiddleware[AgentState, None, None]):  # type: ignore[ty
             )
 
         return tools
-
-    @override
-    async def awrap_tool_call(
-        self,
-        request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],  # type: ignore # FIX ME # FIX ME
-    ) -> ToolMessage | Command[Any]:  # type: ignore # FIX ME # FIX ME
-        """overriding the AgentMiddleware method to trace tool calls."""
-        _ = get_stream_writer()  # noqa
-        logger.debug(
-            f"Tool call: {request.tool_call.get('name')} with args {request.tool_call.get('args')}"
-        )  # type: ignore # FIX ME # FIX ME
-        try:
-            response = await handler(request)
-            return response
-        except ToolException as e:
-            logger.exception("Error during tool call")
-            return ToolMessage(
-                content=f"Error during tool call: {e}",
-                name=request.tool_call.get("name"),
-                tool_call_id=request.tool_call.get("id"),
-                success=False,
-            )
 
     @override
     def before_model(
@@ -351,9 +329,8 @@ class OverlordAgent(AgentMiddleware[AgentState, None, None]):  # type: ignore[ty
         agent = create_deep_agent(
             model=model,
             tools=tools,
-            # memory Optional list of memory file paths (AGENTS.md files) to load (e.g., ["/memory/AGENTS.md"]). Memory is loaded at agent startup and added into the system prompt.
-            # backend Pass either a Backend instance or a callable factory like lambda rt: StateBackend(rt). For execution support, use a backend that implements SandboxBackendProtocol
-            middleware=middleware,  # type: ignore[arg-type] # FIX ME
+            backend=FilesystemBackend(root_dir = self.workspace_path, virtual_mode=True),
+            middleware=middleware,
             debug=self.debug,
             name=self.nickname,
         )
