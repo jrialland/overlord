@@ -1,6 +1,6 @@
 
 ![overlord](./assets/header-image.png)
-[![build status](https://github.com/jrialland/overlord/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/jrialland/overlord/actions)
+<!--[![build status](https://github.com/jrialland/overlord/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/jrialland/overlord/actions) -->
 <!--[![coverage](https://coveralls.io/repos/github/jrialland/overlord/badge.svg?branch=develop)](https://coveralls.io/github/jrialland/overlord?branch=develop) -->
 <!--[![security: bandit](https://img.shields.io/badge/security-bandit-yellow.svg)](https://github.com/PyCQA/bandit) -->
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://docs.astral.sh/ruff/)
@@ -11,15 +11,13 @@
 [![stars](https://img.shields.io/github/stars/jrialland/overlord)](https://github.com/jrialland/overlord)
 [![forks](https://img.shields.io/github/forks/jrialland/overlord)](https://github.com/jrialland/overlord)
 
-
-
 A crude coding agent running in non-interactive CLI mode.
 
 
 This is an experiment in using different techniques to get complex coding tasks done without supervision over long periods.
 
 
-_ ⚠️ Very experimental, Work In Progress: This was *not* designed with privacy or safety in mind! – I'm not your mother, but be careful anyway._
+> ⚠️ Very experimental, Work In Progress: This was *not* designed with privacy or safety in mind! – I'm not your mother, but be careful anyway.
 
 # What it is
 
@@ -102,8 +100,49 @@ this feature will use the 'embedding_model' that is defined in configuration.
 [Qdrant](https://qdrant.tech/) is the vector database, it saves the index in '.qdrant_data/' below the indexed folder
 
 ## Agent graph (will evolve)
+<!-- ![graph](./assets/graph.png) -->
 
-![graph](./assets/graph.png)
+```mermaid
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+        __start__([<p>__start__</p>]):::first
+        ralph_mode_begin(ralph_mode_begin)
+        ralph_mode_end(ralph_mode_end)
+        __end__([<p>__end__</p>]):::last
+        __start__ --> ralph_mode_begin;
+        ralph_mode_begin --> ralph_mode_wrapped_graph\3aPatchToolCallsMiddleware\2ebefore_agent;
+        ralph_mode_end -. &nbsp;ralph_mode_disabled&nbsp; .-> __end__;
+        ralph_mode_end -. &nbsp;ralph_mode_enabled&nbsp; .-> ralph_mode_begin;
+        ralph_mode_wrapped_graph\3a__end__ --> ralph_mode_end;
+        subgraph ralph_mode_wrapped_graph
+        ralph_mode_wrapped_graph\3amodel(model)
+        ralph_mode_wrapped_graph\3atools(tools)
+        ralph_mode_wrapped_graph\3aTodoListMiddleware\2eafter_model(TodoListMiddleware.after_model)
+        ralph_mode_wrapped_graph\3aPatchToolCallsMiddleware\2ebefore_agent(PatchToolCallsMiddleware.before_agent)
+        ralph_mode_wrapped_graph\3aOverlordAgent\2ebefore_model(OverlordAgent.before_model)
+        ralph_mode_wrapped_graph\3aCustomPromptMiddleware\2ebefore_model(CustomPromptMiddleware.before_model)
+        ralph_mode_wrapped_graph\3aConversationShrinkerMiddleware\2ebefore_model(ConversationShrinkerMiddleware.before_model)
+        ralph_mode_wrapped_graph\3aSummarizationMiddleware\2ebefore_model(SummarizationMiddleware.before_model)
+        ralph_mode_wrapped_graph\3a__end__(<p>__end__</p>)
+        ralph_mode_wrapped_graph\3aConversationShrinkerMiddleware\2ebefore_model --> ralph_mode_wrapped_graph\3aSummarizationMiddleware\2ebefore_model;
+        ralph_mode_wrapped_graph\3aCustomPromptMiddleware\2ebefore_model --> ralph_mode_wrapped_graph\3aConversationShrinkerMiddleware\2ebefore_model;
+        ralph_mode_wrapped_graph\3aOverlordAgent\2ebefore_model --> ralph_mode_wrapped_graph\3aCustomPromptMiddleware\2ebefore_model;
+        ralph_mode_wrapped_graph\3aPatchToolCallsMiddleware\2ebefore_agent --> ralph_mode_wrapped_graph\3aOverlordAgent\2ebefore_model;
+        ralph_mode_wrapped_graph\3aSummarizationMiddleware\2ebefore_model --> ralph_mode_wrapped_graph\3amodel;
+        ralph_mode_wrapped_graph\3aTodoListMiddleware\2eafter_model -.-> ralph_mode_wrapped_graph\3aOverlordAgent\2ebefore_model;
+        ralph_mode_wrapped_graph\3aTodoListMiddleware\2eafter_model -.-> ralph_mode_wrapped_graph\3a__end__;
+        ralph_mode_wrapped_graph\3aTodoListMiddleware\2eafter_model -.-> ralph_mode_wrapped_graph\3atools;
+        ralph_mode_wrapped_graph\3amodel --> ralph_mode_wrapped_graph\3aTodoListMiddleware\2eafter_model;
+        ralph_mode_wrapped_graph\3atools -.-> ralph_mode_wrapped_graph\3aOverlordAgent\2ebefore_model;
+        end
+        classDef default fill:#f2f0ff,line-height:1.2
+        classDef first fill-opacity:0
+        classDef last fill:#bfb6fc
+```
 
 ## Choosing a LLM
 

@@ -363,6 +363,7 @@ class OverlordAgent(AgentMiddleware[AgentState, None, None]):  # type: ignore[ty
         if self.debug:
             try:
                 logger.debug(self.graph.get_graph(xray=True).draw_ascii())
+                #logger.debug(self.graph.get_graph(xray=True).draw_mermaid())
                 #(self.agent_folder / "graph.png").write_bytes(
                 #    self.graph.get_graph(xray=True).draw_mermaid_png()
                 #)
