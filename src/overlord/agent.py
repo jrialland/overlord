@@ -11,15 +11,11 @@ from deepagents.backends import FilesystemBackend
 from langchain.agents.middleware import (ModelRetryMiddleware, Runtime,
                                          SummarizationMiddleware)
 from langchain.agents.middleware.types import AgentMiddleware, ContextT
-from langchain_core.messages import (AIMessage, BaseMessage, HumanMessage,
-                                     SystemMessage, ToolMessage)
+from langchain_core.messages import (AIMessage, BaseMessage, HumanMessage)
 from langchain_core.tools import BaseTool, tool
-from langchain_core.tools.base import ToolException
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.config import get_stream_writer
 from langgraph.graph.state import CompiledStateGraph  # type: ignore # FIX ME # FIX ME
-from langgraph.prebuilt.tool_node import ToolCallRequest
-from langgraph.types import Command
 from loguru import logger
 from pydantic import BaseModel, Field
 
@@ -37,15 +33,12 @@ from .utils.naming import make_bot_name  # type: ignore # FIX ME # FIX ME
 
 # -------------------------------------------------------------------------------
 class AgentState(BaseModel):
+
     messages: list[BaseMessage] = Field(
         default_factory=list, description="The message history of the agent."
     )
     current_skill: str | None = Field(
         default=None, description="The currently active skill of the agent, if any."
-    )
-    next_skill: str | None = Field(
-        default=None,
-        description="The next skill to activate, if any. This can be set by the agent's reasoning process to indicate which skill should be activated next.",
     )
 
     debug: bool = Field(
@@ -256,7 +249,7 @@ class OverlordAgent(AgentMiddleware[AgentState, None, None]):  # type: ignore[ty
                 return "Error: Invalid skill_id. Available skills are: " + ", ".join(
                     skill_names
                 )
-            state.next_skill = skill_id
+            state.current_skill = skill_id
             definition = self.prompt_generator.skills.get(skill_id)  # type: ignore[union-attr] # FIX ME
             return definition.content  # type: ignore[union-attr] # FIX ME
 
@@ -281,26 +274,6 @@ class OverlordAgent(AgentMiddleware[AgentState, None, None]):  # type: ignore[ty
             )
 
         return tools
-
-    @override
-    def before_model(
-        self, state: AgentState, runtime: Runtime[None]
-    ) -> dict[str, Any] | None:
-        messages = state.get("messages", [])
-        current_skill = state.get("current_skill")
-        next_skill = state.get("next_skill")
-        if next_skill and next_skill != current_skill:
-            logger.debug(f"Activating skill: {next_skill}")
-            state.set("current_skill", next_skill)
-            state.set("next_skill", None)
-            messages.append(
-                SystemMessage(
-                    content=self.prompt_generator.skills[state.get("current_skill")].content  # type: ignore[union-attr] # FIX ME
-                )
-            )  # type: ignore  # FIX ME # FIX ME
-            return {"messages": messages}
-        else:
-            return None
 
     async def _initialize_graph(self):  # type: ignore[no-untyped-def]
 
