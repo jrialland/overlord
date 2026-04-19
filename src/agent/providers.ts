@@ -13,6 +13,8 @@ type LiteLlmModelMetadata = {
 
 type LiteLlmModelMap = Record<string, LiteLlmModelMetadata>;
 
+const DEFAULT_CONTEXT_WINDOW_SIZE = 128 * 1024; // 32768 tokens in units of 4 bytes/token
+
 /**
  * Vendored LiteLLM model metadata map.
  *
@@ -107,10 +109,10 @@ export async function resolveContextWindowSize(modelName: string, modelConfig?: 
 
     // Strategy 4: Last-resort fallback when no explicit config, provider API, or vendored metadata exists.
     logger.warn(
-        { model: modelName, fallbackContextWindow: 32768 },
+        { model: modelName, fallbackContextWindow: DEFAULT_CONTEXT_WINDOW_SIZE },
         'Falling back to default context window size because no reliable model metadata was found'
     );
-    return 128 * 1024; // 32768 tokens in units of 4 bytes/token
+    return DEFAULT_CONTEXT_WINDOW_SIZE;
 }
 
 /**

@@ -5,9 +5,11 @@ import { Repository } from "../session/repository";
 import { HasMessages, type SessionRequest } from "./types";
 import { PromptTemplate } from "../prompt";
 import { SkillsLoader } from "../skills";
-import type { PlanTools } from "../tools/plan";
+import { PlanTools } from "../tools/plan";
 import { TerminalTools } from "../tools/terminal";
 import { FileSystemTools } from "../tools/filesystem";
+import { WebTools } from "../tools/web";
+
 import type { Graph } from "./graph";
 import { type Process } from "../process";
 import { createModel } from "./providers";
@@ -20,6 +22,7 @@ import { SummarizationPlugin, type SummarizationPluginConfig } from "./summariza
 import { resolveContextWindowSize } from "./providers";
 import { RalphModePlugin } from "./ralph-mode-plugin";
 import type { AgentCommand } from "./types";
+
 
 /**
  * Session-level lifecycle events emitted by AgentProcess on the sessionEventTopic.
@@ -81,7 +84,7 @@ export interface PluginChain {
 
 class PluginChainImpl implements PluginChain {
 
-    constructor(private plugins: AgentPlugin[], private state: AgentState) {}
+    constructor(private plugins: AgentPlugin[], private state: AgentState) { }
 
     /** Returns a getter for the current mutable state. Used by tool closures (e.g. mode-switching tools) to read/mutate state during graph execution. */
     get stateGetter(): () => AgentState {
@@ -220,7 +223,7 @@ class ModeSwitchingPlugin implements AgentPlugin {
      */
     async getToolSet(state: AgentState, chain: PluginChain): Promise<ToolSet> {
         let toolSet = await chain.doNextGetToolSet();
-        if(state.mode === AgentMode.PLAN) {
+        if (state.mode === AgentMode.PLAN) {
             toolSet = {
                 ...toolSet,
                 "SwitchToAgentMode": {
@@ -257,25 +260,36 @@ class BuiltInToolsProviderPlugin implements AgentPlugin {
 
     private filesystemTools: FileSystemTools;
     private terminalTools: TerminalTools;
+    private webTools: WebTools;
 
-    constructor(workspace:string) {
+    constructor(workspace: string) {
         this.filesystemTools = new FileSystemTools(workspace);
         this.terminalTools = new TerminalTools(workspace);
+        this.webTools = new WebTools(workspace);
     }
 
     async getToolSet(state: AgentState, chain: PluginChain): Promise<ToolSet> {
         let toolSet = await chain.doNextGetToolSet();
+
+        // add filesystem tools with write operations gated on agent mode
         toolSet = {
             ...toolSet,
-            ...this.filesystemTools.getToolSet(state.mode == AgentMode.AGENT), // only provide filesystem tools in agent mode
-            
+            ...this.filesystemTools.getToolSet(state.mode == AgentMode.AGENT), // only allow file writing operations in agent mode
         }
-        if(state.mode === AgentMode.AGENT) {
+
+        // add terminal tools only in agent mode
+        if (state.mode === AgentMode.AGENT) {
             toolSet = {
                 ...toolSet,
                 ...this.terminalTools.getToolSet(),
             }
         }
+
+        // add web tools in both modes (e.g. for research in plan mode, and execution in agent mode)
+        for (const [toolName, tool] of Object.entries(await this.webTools.getToolSet())) {
+            toolSet[toolName] = tool;
+        }
+
         return toolSet;
     }
 }
@@ -308,7 +322,7 @@ class ReActAgentPlugin implements AgentPlugin {
 
     constructor(
         private readonly eventTopic: Topic<ReActEvent> = NullTopic as Topic<ReActEvent>
-    ) {}
+    ) { }
 
     async getGraph(state: AgentState, chain: PluginChain): Promise<Graph<AgentState>> {
         const graph = makeReActGraph({
