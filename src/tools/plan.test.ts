@@ -4,7 +4,7 @@ import { PlanTools } from './plan';
 
 describe('PlanTools', () => {
     it('creates tasks with pending status and timestamps', () => {
-        const tools = new PlanTools();
+        const tools = new PlanTools("test_workspace");
 
         const result = tools.createTask('Investigate project structure');
 
@@ -16,7 +16,7 @@ describe('PlanTools', () => {
     });
 
     it('normalizes status aliases when updating tasks directly', () => {
-        const tools = new PlanTools();
+        const tools = new PlanTools("test_workspace");
         tools.createTask('Run integration checks');
 
         const updateResult = tools.updateTaskStatus(1, 'done', 'Checks are green');
@@ -29,7 +29,7 @@ describe('PlanTools', () => {
     });
 
     it('returns a specific message when updating with an unknown status', () => {
-        const tools = new PlanTools();
+        const tools = new PlanTools("test_workspace");
         tools.createTask('Draft release notes');
 
         const updateResult = tools.updateTaskStatus(1, 'blocked');
@@ -38,7 +38,7 @@ describe('PlanTools', () => {
     });
 
     it('returns a specific message when updating an invalid task index', () => {
-        const tools = new PlanTools();
+        const tools = new PlanTools("test_workspace");
 
         const updateResult = tools.updateTaskStatus(42, 'completed');
 
@@ -46,7 +46,7 @@ describe('PlanTools', () => {
     });
 
     it('renders markdown with status markers and comments', () => {
-        const tools = new PlanTools();
+        const tools = new PlanTools("test_workspace");
         tools.createTask('Plan milestones');
         tools.createTask('Archive obsolete ideas');
 
@@ -61,7 +61,7 @@ describe('PlanTools', () => {
     });
 
     it('clears all tasks', () => {
-        const tools = new PlanTools();
+        const tools = new PlanTools("test_workspace");
         tools.createTask('One');
         tools.createTask('Two');
 
@@ -71,7 +71,7 @@ describe('PlanTools', () => {
     });
 
     it('exposes a working toolset for agentic planning workflows', async () => {
-        const tools = new PlanTools();
+        const tools = new PlanTools("test_workspace");
         const toolset = tools.getToolSet();
 
         expect(Object.keys(toolset).sort()).toEqual([

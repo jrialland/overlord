@@ -49,6 +49,8 @@ export class PlanTools {
 
     private tasks: Task[] = [];
 
+    constructor(private workspace: string) {}
+
     createTask(title: string): string {
         const newTask: Task = {
             title,

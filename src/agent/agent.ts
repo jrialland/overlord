@@ -1,13 +1,15 @@
-import { type Tool, type ToolSet } from "ai";
+import { tool, type Tool, type ToolSet } from "ai";
 import { z } from "zod";
 import type { Session } from "../session/repository";
 import { Repository } from "../session/repository";
 import { HasMessages, type SessionRequest } from "./types";
 import { PromptTemplate } from "../prompt";
 import { SkillsLoader } from "../skills";
-import type { PlanTools } from "../tools/plan";
+import { PlanTools } from "../tools/plan";
 import { TerminalTools } from "../tools/terminal";
 import { FileSystemTools } from "../tools/filesystem";
+import { WebTools } from "../tools/web";
+
 import type { Graph } from "./graph";
 import { type Process } from "../process";
 import { createModel } from "./providers";
@@ -20,6 +22,8 @@ import { SummarizationPlugin, type SummarizationPluginConfig } from "./summariza
 import { resolveContextWindowSize } from "./providers";
 import { RalphModePlugin } from "./ralph-mode-plugin";
 import type { AgentCommand } from "./types";
+import { main } from "bun";
+
 
 /**
  * Session-level lifecycle events emitted by AgentProcess on the sessionEventTopic.
@@ -81,7 +85,7 @@ export interface PluginChain {
 
 class PluginChainImpl implements PluginChain {
 
-    constructor(private plugins: AgentPlugin[], private state: AgentState) {}
+    constructor(private plugins: AgentPlugin[], private state: AgentState) { }
 
     /** Returns a getter for the current mutable state. Used by tool closures (e.g. mode-switching tools) to read/mutate state during graph execution. */
     get stateGetter(): () => AgentState {
@@ -195,88 +199,78 @@ class SystemPromptPlugin implements AgentPlugin {
     description = "System prompt plugin";
     name = "SystemPromptPlugin"
 
-    private promptTemplate: PromptTemplate;
-
     /** @param planTools - Optional task tracker to include the current plan in the system prompt. */
-    constructor(workspace: string, planTools?: PlanTools) {
-        this.promptTemplate = PromptTemplate.makeAgentTemplate(workspace, planTools);
+    constructor(private workspace: string) {
     }
 
     async beforeConversation(state: AgentState, chain: PluginChain): Promise<AgentState> {
+
+        const builtInTools = state.pluginData["BuiltInToolsProviderPlugin"];
+        const planTools: PlanTools | undefined = builtInTools?.["planTools"] as PlanTools | undefined;
+
         if (!state.firstSystemMessage) {
-            const systemPrompt = await this.promptTemplate.render({ currentMode: state.mode });
+            const promptTemplate = PromptTemplate.makeAgentTemplate(this.workspace, planTools);
+
+            const systemPrompt = await promptTemplate.render({ currentMode: state.mode });
             state.setFirstSystemMessage(systemPrompt);
         }
         return chain.doNextBeforeConversation(state);
     }
 }
-
-class ModeSwitchingPlugin implements AgentPlugin {
-    description = "Mode switching plugin to control whether the agent is in planning mode or agent mode."
-    name = "ModeSwitchingPlugin"
-
-    /**
-     * Inject a tool that allow to switch between planing mode and agent mode.
-     */
-    async getToolSet(state: AgentState, chain: PluginChain): Promise<ToolSet> {
-        let toolSet = await chain.doNextGetToolSet();
-        if(state.mode === AgentMode.PLAN) {
-            toolSet = {
-                ...toolSet,
-                "SwitchToAgentMode": {
-                    description: "Switch the agent to AGENT mode, allowing it to execute tasks directly instead of just planning.",
-                    inputSchema: z.object({}),
-                    execute: async () => {
-                        chain.stateGetter().mode = AgentMode.AGENT;
-                        return "Switched to AGENT mode. You can now execute tasks directly.";
-                    }
-                } as Tool
-            };
-        } else if (state.mode === AgentMode.AGENT) {
-            toolSet = {
-                ...toolSet,
-                "SwitchToPlanMode": {
-                    description: "Switch the agent to PLAN mode, allowing it to create and manage a plan of tasks instead of executing them directly.",
-                    inputSchema: z.object({}),
-                    execute: async () => {
-                        chain.stateGetter().mode = AgentMode.PLAN;
-                        return "Switched to PLAN mode. You can now create and manage a plan of tasks.";
-                    }
-                } as Tool
-            };
-        } else {
-            throw new Error(`Unknown agent mode: ${state.mode}`);
-        }
-        return toolSet;
-    }
-}
-
 class BuiltInToolsProviderPlugin implements AgentPlugin {
     name = "BuiltInToolsProviderPlugin";
     description = "Provides The set of tools available to the agent"
 
     private filesystemTools: FileSystemTools;
     private terminalTools: TerminalTools;
+    private webTools: WebTools;
+    private planTools: PlanTools;
 
-    constructor(workspace:string) {
+    constructor(workspace: string) {
         this.filesystemTools = new FileSystemTools(workspace);
         this.terminalTools = new TerminalTools(workspace);
+        this.webTools = new WebTools(workspace);
+        this.planTools = new PlanTools(workspace);
     }
 
     async getToolSet(state: AgentState, chain: PluginChain): Promise<ToolSet> {
         let toolSet = await chain.doNextGetToolSet();
+
+        // add filesystem tools with write operations gated on agent mode
         toolSet = {
             ...toolSet,
-            ...this.filesystemTools.getToolSet(state.mode == AgentMode.AGENT), // only provide filesystem tools in agent mode
-            
+            ...this.filesystemTools.getToolSet(state.mode == AgentMode.AGENT), // only allow file writing operations in agent mode
         }
-        if(state.mode === AgentMode.AGENT) {
-            toolSet = {
-                ...toolSet,
-                ...this.terminalTools.getToolSet(),
-            }
+
+        // add terminal tools (todo restring only to agent mode)
+        toolSet = {
+            ...toolSet,
+            ...this.terminalTools.getToolSet(),
         }
+
+        // add plan tools (todo: should we restrict to plan mode only?)
+        toolSet = {
+            ...toolSet,
+            ...this.planTools.getToolSet(),
+        }
+
+        // add web tools
+        toolSet = {
+            ...toolSet,
+            ...(await this.webTools.getToolSet()),
+        }
+        
         return toolSet;
+    }
+
+    beforeConversation(state: AgentState, chain: PluginChain): Promise<AgentState> {
+        state.pluginData[this.name] = {
+            filesystemTools: this.filesystemTools,
+            terminalTools: this.terminalTools,
+            webTools: this.webTools,
+            planTools: this.planTools,
+        };
+        return chain.doNextBeforeConversation(state);
     }
 }
 
@@ -308,7 +302,7 @@ class ReActAgentPlugin implements AgentPlugin {
 
     constructor(
         private readonly eventTopic: Topic<ReActEvent> = NullTopic as Topic<ReActEvent>
-    ) {}
+    ) { }
 
     async getGraph(state: AgentState, chain: PluginChain): Promise<Graph<AgentState>> {
         const graph = makeReActGraph({
@@ -376,7 +370,6 @@ export class AgentProcess implements Process {
         private readonly commandTopic?: Topic<AgentCommand>,
     ) {
         this.plugins.push(new SystemPromptPlugin(workspace));
-        this.plugins.push(new ModeSwitchingPlugin());
         this.plugins.push(new RalphModePlugin(ralphIterations));
         this.plugins.push(new MCPToolsPlugin(new MCPClientManager(workspace)));
         this.plugins.push(new BuiltInToolsProviderPlugin(workspace));
