@@ -19,13 +19,13 @@ import fs from "fs";
 import { logger } from "../logging";
 import { type Tool, type ToolSet } from "ai";
 
-import { Readability } from '@mozilla/readability';
-import TurndownService from 'turndown';
-import { JSDOM, VirtualConsole } from 'jsdom';
+import {JSDOM, VirtualConsole} from "jsdom";
+import { Defuddle, type DefuddleResponse } from 'defuddle/node';
 
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { z } from "zod";
+import { error } from "console";
 
 const pyproject = `
 [project]
@@ -135,8 +135,6 @@ export class WebTools {
     private attemptedInitialization = false;
 
     private pythonProjectDir: string
-
-    private turnDownService = new TurndownService();
 
     constructor(private workspace: string, pythonProjectDir: string | undefined = undefined) {
         if (!pythonProjectDir) {
@@ -298,7 +296,7 @@ export class WebTools {
                     url: z.string().url().describe("The URL of the web page to fetch")
                 }),
                 execute: async ({ url }) => {
-                    return await this.webFetch(url);
+                    return await this.fetchWebContent(url);
                 }
             } as Tool
         };
@@ -306,58 +304,57 @@ export class WebTools {
         return tools;
     }
 
-    async webFetch(url: string): Promise<string> {
-        try {
-
-            const controller = new AbortController();
-            const timeout = setTimeout(() => {
-                controller.abort();
-            }, 15000);
-            const response = await fetch(url, { signal: controller.signal });
-            clearTimeout(timeout);
+    async fetchWebContent(url: string): Promise<string> {
 
 
-            if (!response.ok) {
-                throw new Error(`HTTP Status ${response.status}`);
-            }
+        const controller = new AbortController();
+        const timeout = setTimeout(() => {
+            controller.abort();
+        }, 15000);
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
 
-            const MAX_BYTES = 57344; // 56 KB
 
-            const responseReader = response.body!.getReader();
-            let received = 0;
-            let chunks: Uint8Array[] = [];
-
-            while (true) {
-                const { done, value } = await responseReader.read();
-                if (done) break;
-                received += value.length;
-                if (received > MAX_BYTES) {
-                    controller.abort();
-                    throw new Error("Response too large");
-                }
-                chunks.push(value);
-            }
-
-            const html = new TextDecoder("utf-8").decode(new Uint8Array(chunks.reduce((acc, chunk) => [...acc, ...chunk], [])));
-
-            const virtualConsole = new VirtualConsole();
-            virtualConsole.on("error", (message) => {
-                logger.warn(`JSDOM error: ${message}`);
-            });
-            const dom = new JSDOM(html, { url, virtualConsole, resources: "usable", runScripts: "outside-only" });
-            const reader = new Readability(dom.window.document);
-            const article = reader.parse();
-            if (article) {
-                if (!article.content || article.content.trim() === "") {
-                    return "(No extractable content found on the page)";
-                }
-                return this.turnDownService.turndown(article.content);
-            } else {
-                return "(No extractable content found on the page)";
-            }
-        } catch (error) {
-            logger.error({ error }, `Failed to fetch and extract content from URL: ${url}`);
-            return "(Failed to fetch web content)";
+        if (!response.ok) {
+            throw new Error(`HTTP Status ${response.status}`);
         }
+
+        const MAX_BYTES = 1024 * 1024 * 5; // 5 MB limit
+
+        const responseReader = response.body!.getReader();
+        let received = 0;
+        let chunks: Uint8Array[] = [];
+
+        while (true) {
+            const { done, value } = await responseReader.read();
+            if (done) break;
+            received += value.length;
+            if (received > MAX_BYTES) {
+                controller.abort();
+                throw new Error("Response too large");
+            }
+            chunks.push(value);
+        }
+        const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+        const combined = new Uint8Array(totalLength);
+        chunks.reduce((offset, chunk) => {
+            combined.set(chunk, offset);
+            return offset + chunk.length;
+        }, 0);
+        const html = new TextDecoder("utf-8").decode(combined);
+
+        const virtualConsole = new VirtualConsole();
+        virtualConsole.on("error", (msg) => {
+            logger.warn(`jsdom error while parsing ${url}: ${msg}`);
+        });
+
+        const jsdom = new JSDOM(html, { virtualConsole });
+        const result = await Defuddle(jsdom.window.document, url, { markdown: true });
+        const content = (result.content ||'').trim();
+        if(!content) {
+            throw new Error("No content extracted from the web page");
+        }
+        return content
     }
+
 }

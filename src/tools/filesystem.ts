@@ -415,7 +415,7 @@ export class FileSystemTools {
                 }),
                 execute: async ({ file_path }) => this.viewImageFile(file_path)
             } as Tool,
-            "Read": {
+            "ReadFile": {
                 description: "Read a portion of a text file, with optional line numbers. Provide a relative or absolute file path, and optionally a 1-based line offset and line count to read a specific portion of the file.",
                 inputSchema: z.object({
                     file_path: z.string(),
@@ -425,7 +425,7 @@ export class FileSystemTools {
                 }),
                 execute: async ({ file_path, line_offset, line_count, include_line_numbers }) => this.readTextFile(file_path, line_offset, line_count, include_line_numbers)
             } as Tool,
-            "Write": {
+            "WriteFile": {
                 description: "Write text to a file, optionally appending to existing content. Provide a relative or absolute file path, the text to write, and whether to append or overwrite existing content.",
                 inputSchema: z.object({
                     file_path: z.string(),
@@ -434,7 +434,7 @@ export class FileSystemTools {
                 }),
                 execute: async ({ file_path, text, append }) => this.writeTextToFile(file_path, text, append)
             } as Tool,
-            "Delete": {
+            "DeleteFileOrDir": {
                 description: "Delete a file or directory. Provide a relative or absolute path to the file or directory to delete.",
                 inputSchema: z.object({
                     file_or_dir_path: z.string()
@@ -442,7 +442,7 @@ export class FileSystemTools {
                 execute: async ({ file_or_dir_path }) => this.delete(file_or_dir_path)
             } as Tool,
             "CreateUnifiedDiff": {
-                description: "Creates a unified diff between two text files. Both files must exist and be text files, otherwise an error is thrown. Provide relative or absolute paths to the source and target files.",
+                description: "Creates a unified diff between two text files.",
                 inputSchema: z.object({
                     file_path_1: z.string(),
                     file_path_2: z.string()
@@ -450,7 +450,7 @@ export class FileSystemTools {
                 execute: async ({ file_path_1, file_path_2 }) => this.createUnifiedDiffFiles(file_path_1, file_path_2)
             } as Tool,
             "ApplyUnifiedDiff": {
-                description: "Applies a unified diff patch to a text file. The file must exist and be a text file, otherwise an error is thrown. The patch must be a valid unified diff, otherwise an error is thrown. Provide a relative or absolute path to the file to apply the patch on, and the content of the patch.",
+                description: "Applies a unified diff patch to a text file.",
                 inputSchema: z.object({
                     file_path: z.string(),
                     patch: z.string()
@@ -458,7 +458,7 @@ export class FileSystemTools {
                 execute: async ({ file_path, patch }) => this.applyUnifiedDiffToFile(file_path, patch)
             } as Tool,
             "Move": {
-                description: "Move or rename a file or directory. If the target path already exists, it will be overwritten. If the target directory does not exist, it will be created. Provide relative or absolute paths for the source and target.",
+                description: "Move or rename a file or directory.",
                 inputSchema: z.object({
                     source_path: z.string(),
                     target_path: z.string()
@@ -466,7 +466,7 @@ export class FileSystemTools {
                 execute: async ({ source_path, target_path }) => this.moveFileOrDir(source_path, target_path)
             } as Tool,
             "FindFiles": {
-                description: "Find files matching a glob pattern. Provide an optional base directory (relative or absolute) to search within, and a glob pattern to match files against. The base directory must be within the workspace. If no base directory is provided, the workspace root will be used.",
+                description: "Find files matching a glob pattern.",
                 inputSchema: z.object({
                     base_dir: z.string().optional(),
                     glob_pattern: z.string()
@@ -474,7 +474,7 @@ export class FileSystemTools {
                 execute: async ({ base_dir, glob_pattern }) => this.findFiles(base_dir, glob_pattern)
             } as Tool,
             "GetFileInfo": {
-                description: "Get detailed informations about a file.",
+                description: "Get detailed information about a file.",
                 inputSchema: z.object({
                     file_path: z.string()
                 }),
@@ -482,7 +482,7 @@ export class FileSystemTools {
             } as Tool
         } as ToolSet;
 
-        const writeOperations = ["Write", "Delete", "Move", "ApplyUnifiedDiff"];
+        const writeOperations = ["WriteFile", "DeleteFileOrDir", "Move", "ApplyUnifiedDiff"];
         if (!allowWriteOperations) {
             for (const op of writeOperations) {
                 delete toolset[op];

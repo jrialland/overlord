@@ -129,27 +129,6 @@ class ActiveSkillSection implements PromptSection {
     }
 }
 
-class CurrentModeSection implements PromptSection {
-    name: string;
-
-    constructor(name: string) {
-        this.name = name;
-    }
-
-    async getContent(vars?: PromptVariables): Promise<string | undefined> {
-        if (!vars?.currentMode) {
-            return undefined;
-        }
-        if(vars.currentMode === 'agent') {
-            return "You are currently in **agent mode**. In this mode, You can plan, or directly execute tasks in order to complete the assigned task.";
-        }
-        if(vars.currentMode === 'plan') {
-            return "You are currently in **plan mode**. In this mode, you should focus on elaborating a comprehensive plan to complete the assigned task, using the \"*Todo*\" tools. Then, you can switch to agent mode to execute the plan step by step, updating the status of each task as you progress.";
-        }
-        return `You are currently in **${vars.currentMode} mode**.`;
-    }
-}
-
 class CurrentPlanSection implements PromptSection {
     name: string;
     private planTools: PlanTools;
@@ -208,7 +187,7 @@ export class PromptTemplate {
      * Creates a comprehensive prompt template for the main agent.
      * Includes system information, user context, available skills, and current tasks.
      * @param workspace - The workspace root directory
-     * @param planTools - Optional plan/task tracker for including current tasks
+     * @param planTools - Optional task tracker to include the current plan in the system prompt.
      */
     static makeAgentTemplate(workspace: string, planTools?: PlanTools): PromptTemplate {
         const template = new PromptTemplate();
@@ -232,10 +211,7 @@ export class PromptTemplate {
         // Detailed content of the currently active skill
         template.addSection(new ActiveSkillSection('Active Skill', skillsLoader));
 
-        // Current mode/context section
-        template.addSection(new CurrentModeSection('Current Mode'));
-
-        // Current plan/tasks if provided
+        // current plan
         if (planTools) {
             template.addSection(new CurrentPlanSection('Your Current Plan', planTools));
         }

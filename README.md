@@ -11,7 +11,7 @@ If you want a local-first agent runtime you can run, inspect, and extend, Overlo
 **Let it introduce itself** :
 
 ```bash
-bun run index.ts --model ollama/glm-5:cloud --query "Make a summary about the current project : technical stack, market positioning, strengths, weaknesses. Conclude by explaining why it is demonstrative of recent agentic techniques, and list usecases for which this project could be useful"
+bun run index.ts --model ollama:glm-5:cloud --query "Make a summary about the current project : technical stack, market positioning, strengths, weaknesses. Conclude by explaining why it is demonstrative of recent agentic techniques, and list usecases for which this project could be useful"
 ```
 
 ---
@@ -163,27 +163,23 @@ Implements the **conversation rotation pattern** with automatic summarization wh
 
 Uses **graphology** to implement directed-graph execution, enabling complex agent workflows with conditional edges, loops, and subgraphs. This is similar to LangGraph and other graph-based agent frameworks.
 
-#### 5. **Ralph Wiggum Technique**
-
-Implements an experimental **iterative reset pattern** where the agent runs in loops with fresh contexts, allowing it to tackle problems from multiple angles without accumulating errors.
-
-#### 6. **Model Context Protocol (MCP)**
+#### 5. **Model Context Protocol (MCP)**
 
 Early adopter of **Anthropic's MCP standard** for tool integration, demonstrating interoperability with external tool servers across different transports.
 
-#### 7. **Skill-Based Specialization**
+#### 6. **Skill-Based Specialization**
 
 The **skills system** allows agents to acquire specialized capabilities on-demand, similar to tool-calling but with richer context and instruction injection.
 
-#### 8. **Streaming-First Design**
+#### 7. **Streaming-First Design**
 
 All model interactions stream reasoning and response tokens in real-time, providing immediate feedback and enabling responsive UIs.
 
-#### 9. **Mode-Based Safety**
+#### 8. **Mode-Based Safety**
 
 Implements **plan mode** vs. **agent mode** separation, where destructive tools (file writes, terminal) are only available in agent mode after explicit approval - a pattern gaining traction for safer agents.
 
-#### 10. **Plugin Architecture**
+#### 9. **Plugin Architecture**
 
 The **composable plugin chain** demonstrates modern dependency injection and middleware patterns adapted for AI agents, allowing feature composition without tight coupling.
 
@@ -193,6 +189,7 @@ The **composable plugin chain** demonstrates modern dependency injection and mid
 #### 1. **Local AI Coding Assistant**
 
 Developers can run Overlord locally with Ollama to get help with:
+
 - Code generation and refactoring
 - Debugging and error analysis
 - Documentation writing
@@ -243,6 +240,7 @@ Developers can run Overlord locally with Ollama to get help with:
 #### 8. **Complex Task Orchestration**
 
 Use sub-agents to parallelize:
+
 - Multi-file refactoring
 - Cross-service analysis
 - Large-scale migrations
@@ -310,31 +308,31 @@ bun run index.ts --help
 ### 3) Run A Quick One-Shot Query
 
 ```bash
-bun run index.ts --model ollama/kimi-k2.5:cloud --query "Summarize this repository"
+bun run index.ts --model ollama:kimi-k2.5:cloud --query "Summarize this repository"
 ```
 
 ### 4) Start Interactive Mode
 
 ```bash
-bun run index.ts --model ollama/kimi-k2.5:cloud --interactive
+bun run index.ts --model ollama:kimi-k2.5:cloud --interactive
 ```
 
 ### 5) Run Against Another Workspace
 
 ```bash
-bun run index.ts --workspace ../some-project --model ollama/kimi-k2.5:cloud --query "Map this codebase"
+bun run index.ts --workspace ../some-project --model ollama:kimi-k2.5:cloud --query "Map this codebase"
 ```
 
 ### 6) Try Reasoning Levels
 
 ```bash
-bun run index.ts --model openai/o3 --reasoning high --query "Plan a refactor strategy"
+bun run index.ts --model openai:o3 --reasoning high --query "Plan a refactor strategy"
 ```
 
 ### 7) Enable Automatic Summarization
 
 ```bash
-bun run index.ts --model ollama/kimi-k2.5:cloud --summarize --summary-threshold 80 --query "Summarize this repository"
+bun run index.ts --model ollama:kimi-k2.6:cloud --summarize --summary-threshold 80 --query "Summarize this repository"
 ```
 
 Accepted values for `--reasoning`:
@@ -352,13 +350,13 @@ Use these prompts to quickly demonstrate core features.
 ### Skill Activation Demo
 
 ```bash
-bun run index.ts --model ollama/kimi-k2.5:cloud --query "Use the Skill tool with skill_id ai-sdk, then tell me the first line of that skill content."
+bun run index.ts --model ollama:kimi-k2.5:cloud --query "Use the Skill tool with skill_id ai-sdk, then tell me the first line of that skill content."
 ```
 
 ### Sub-Agent Demo
 
 ```bash
-bun run index.ts --model ollama/kimi-k2.5:cloud --query "Create a sub-agent to inspect loaded skills and report back what it can use."
+bun run index.ts --model ollama:glm-5.1:cloud --query "Create a sub-agent to inspect loaded skills and report back what it can use."
 ```
 
 ### Summarization Integration Demo
@@ -375,7 +373,7 @@ Create `~/.config/overlord/overlord.json` (JSON5) to define defaults and MCP ser
 
 ```json5
 {
-  defaultModel: 'ollama/kimi-k2.5:cloud',
+  defaultModel: 'ollama:kimi-k2.5:cloud',
   defaultModelConfig: {
     // provider/model options
   },
@@ -460,7 +458,7 @@ Behavior:
 - Each new loop iteration runs with a fresh conversation context (only the initial system prompt is kept)
 - Responds to the `set_ralph_iterations` command to adjust the remaining count on a running agent
 
-The term "Ralph" comes from **The Ralph Wiggum technique**, an article by Geoff Huntley.
+The term "Ralph" comes from [Ralph Wiggum as a sotware engineer](https://ghuntley.com/ralph/) and [Everything is ralph loop](https://ghuntley.com/loop/), articles by [Geoff Huntley](https://ghuntley.com/author/ghuntley/)
 
 ### Agent Commands
 
